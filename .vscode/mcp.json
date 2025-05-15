@@ -3,7 +3,7 @@
     "KustoMCP": {
       "type": "stdio",
       "command": "python",
-      "args": ["Q://Learn/kusto-mcp/server/main.py"]
+      "args": ["C:/Intune/kusto-mcp/server/main.py"]
     }
   }
 }
