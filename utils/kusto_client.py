@@ -73,7 +73,7 @@ def execute_query(query, database=None):
         return {"error": f"Unexpected error: {str(e)}"}
 
 def get_schema(database=None):
-    """Retrieve the schema of a Kusto database"""
+    """Retrieve the schema of a Kusto database using a simple query"""
     db = database or KUSTO_DATABASE
     
     if not kusto_client:
@@ -84,7 +84,9 @@ def get_schema(database=None):
         return {"error": "Database not specified"}
     
     try:
-        response = kusto_client.execute_mgmt(db, ".show database schema")
+        # Use a simple query to get schema information instead of management command
+        query = "IntuneEvent() | getschema"
+        response = kusto_client.execute_query(db, query)
         return response.primary_results[0].to_dict()
     except KustoServiceError as e:
         logger.error(f"Kusto schema error: {str(e)}")
@@ -116,23 +118,13 @@ def get_table_schema(table_name, database=None):
         return {"error": "Table name not specified"}
     
     try:
-        # Get the full database schema and filter for the requested table
-        full_schema = get_schema(db)
-        if "error" in full_schema:
-            return full_schema
-            
-        # Filter for just the requested table
-        table_data = []
-        for item in full_schema.get("data", []):
-            if item.get("TableName") == table_name:
-                table_data.append(item)
-                
-        if table_data:
-            result = full_schema.copy()
-            result["data"] = table_data
-            return result
-        else:
-            return {"error": f"Table '{table_name}' not found in database schema"}
+        # Use a direct query to get the table schema
+        query = f"{table_name} | getschema"
+        response = kusto_client.execute_query(db, query)
+        return response.primary_results[0].to_dict()
+    except KustoServiceError as e:
+        logger.error(f"Kusto schema error: {str(e)}")
+        return {"error": str(e)}
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"error": f"Unexpected error: {str(e)}"}
